@@ -20,7 +20,7 @@ partial class EfficientUnionGenerator
 
     public const string UnmanagedFieldBitMaskModeEnumName = nameof(UnmanagedFieldBitMaskMode);
 
-    public static readonly string AttributeSource = $$"""
+    public static readonly string EfficientUnionAttributeSource = $$"""
 using System;
 namespace {{AttributeNamespace}};
 
@@ -99,4 +99,20 @@ internal sealed class {{EnumBitPatternAttributeName}} : Attribute
     }
 }
 """;
+
+    public static readonly string CompilerServicesUnionAttributeSource = """
+        namespace System.Runtime.CompilerServices;
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false)]
+        internal sealed class UnionAttribute : Attribute;
+        """;
+
+    public static readonly string CompilerServicesIUnionSource = """
+        namespace System.Runtime.CompilerServices;
+
+        internal interface IUnion
+        {
+            object? Value { get; }
+        }
+        """;
 }

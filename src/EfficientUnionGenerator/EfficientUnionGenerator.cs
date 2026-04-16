@@ -269,7 +269,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
             }
         }
 
-        var hintName = $"EfficientUnionGenerator-{sb.GetPreferHintName()}";
+        var hintName = sb.GetPreferHintName(prefix: "EfficientUnionGenerator-", suffix: ".g");
         var sourceCode = sb.Build();
         context.AddSource(
             hintName,

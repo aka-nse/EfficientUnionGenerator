@@ -17,14 +17,14 @@ namespace FooBar
         public partial MyUnion1(string x);
     }
 
-    [EfficientUnion(UnmanagedFieldBitMaskMode.Auto, 0x80000000)]
+    [EfficientUnion(TypeIdentifierValueMode.AutoAssign | TypeIdentifierValueMode.SetWhenCreate | TypeIdentifierValueMode.ResetWhenGet, 0x80000000)]
     public readonly partial struct MyUnion2
     {
         public partial MyUnion2(int x);
         public partial MyUnion2(float x);
     }
 
-    [EfficientUnion(UnmanagedFieldBitMaskMode.Explicit, 0x80000000)]
+    [EfficientUnion(TypeIdentifierValueMode.ExplicitAssign | TypeIdentifierValueMode.LeaveWhenCreate | TypeIdentifierValueMode.LeaveWhenGet, 0x80000000)]
     public readonly partial struct MyUnion3
     {
         [EnumBitPattern(0x00000000)] public partial MyUnion3(int x);

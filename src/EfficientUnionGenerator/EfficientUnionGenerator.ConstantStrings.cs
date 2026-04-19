@@ -6,10 +6,17 @@ namespace EfficientUnionGenerator;
 
 partial class EfficientUnionGenerator
 {
-    private enum UnmanagedFieldBitMaskMode
+    [Flags]
+    private enum TypeIdentifierValueMode
     {
-        Auto = 0,
-        Explicit = 1,
+        AutoAssign     = 0b0,
+        ExplicitAssign = 0b1,
+
+        SetWhenCreate   = 0b00,
+        LeaveWhenCreate = 0b10,
+
+        ResetWhenGet = 0b000,
+        LeaveWhenGet = 0b100,
     }
 
     public const string AttributeNamespace = "EfficientUnion";
@@ -18,7 +25,7 @@ partial class EfficientUnionGenerator
 
     public const string EnumBitPatternAttributeName = "EnumBitPatternAttribute";
 
-    public const string UnmanagedFieldBitMaskModeEnumName = nameof(UnmanagedFieldBitMaskMode);
+    public const string TypeIdentifierValueModeEnumName = nameof(TypeIdentifierValueMode);
 
     public static readonly string EfficientUnionAttributeSource = $$"""
 using System;
@@ -27,17 +34,43 @@ namespace {{AttributeNamespace}};
 /// <summary>
 /// Indicates how to treat the fields corresponding to the set bits in the unmanaged field bit mask.
 /// </summary>
-internal enum {{UnmanagedFieldBitMaskModeEnumName}} : int
+[Flags]
+internal enum {{TypeIdentifierValueModeEnumName}} : int
 {
     /// <summary>
-    /// The bit pattern will be specified by compiler.
+    /// Every mode is set to default value. The default value is `AutoAssign | SetWhenCreate | ResetWhenGet`.
     /// </summary>
-    {{nameof(UnmanagedFieldBitMaskMode.Auto)}} = {{(int)UnmanagedFieldBitMaskMode.Auto}},
+    Default = 0,
 
     /// <summary>
-    /// The bit pattern is defined by user.
+    /// Constant assignment policy: the bit pattern will be specified by compiler.
     /// </summary>
-    {{nameof(UnmanagedFieldBitMaskMode.Explicit)}} = {{(int)UnmanagedFieldBitMaskMode.Explicit}},
+    {{nameof(TypeIdentifierValueMode.AutoAssign)}} = {{(int)TypeIdentifierValueMode.AutoAssign}},
+
+    /// <summary>
+    /// Constant assignment policy: the bit pattern is defined by user.
+    /// </summary>
+    {{nameof(TypeIdentifierValueMode.ExplicitAssign)}} = {{(int)TypeIdentifierValueMode.ExplicitAssign}},
+
+    /// <summary>
+    /// Creation policy: the bit pattern of the initialization argument will be set when creating the union instance.
+    /// </summary>
+    {{nameof(TypeIdentifierValueMode.SetWhenCreate)}} = {{(int)TypeIdentifierValueMode.SetWhenCreate}},
+
+    /// <summary>
+    /// Creation policy: the bit pattern of the initialization argument will be kept when creating the union instance.
+    /// </summary>
+    {{nameof(TypeIdentifierValueMode.LeaveWhenCreate)}} = {{(int)TypeIdentifierValueMode.LeaveWhenCreate}},
+
+    /// <summary>
+    /// Access policy: the bit pattern of the entity value will be reset when accessing the union instance.
+    /// </summary>
+    {{nameof(TypeIdentifierValueMode.ResetWhenGet)}} = {{(int)TypeIdentifierValueMode.ResetWhenGet}},
+
+    /// <summary>
+    /// Access policy: the bit pattern of the entity value will be left unchanged when accessing the union instance.
+    /// </summary>
+    {{nameof(TypeIdentifierValueMode.LeaveWhenGet)}} = {{(int)TypeIdentifierValueMode.LeaveWhenGet}},
 }
 
 /// <summary>
@@ -55,7 +88,7 @@ internal sealed class {{EfficientUnionAttributeName}} : Attribute
     /// <summary>
     /// Gets the mode that determines how masked the part of the unmanaged field are handled.
     /// </summary>
-    public {{UnmanagedFieldBitMaskModeEnumName}} UnmanagedFieldBitMaskMode { get; } = {{UnmanagedFieldBitMaskModeEnumName}}.{{UnmanagedFieldBitMaskMode.Auto}};
+    public {{TypeIdentifierValueModeEnumName}} UnmanagedFieldBitMaskMode { get; } = {{TypeIdentifierValueModeEnumName}}.{{TypeIdentifierValueMode.AutoAssign}};
 
     /// <summary>
     /// Gets the unmanaged field mask.
@@ -80,7 +113,7 @@ internal sealed class {{EfficientUnionAttributeName}} : Attribute
     /// The unmanaged field bit mask.
     /// </param>
     public {{EfficientUnionAttributeName}}(
-        {{UnmanagedFieldBitMaskModeEnumName}} unmanagedFieldBitMaskMode = {{UnmanagedFieldBitMaskModeEnumName}}.{{UnmanagedFieldBitMaskMode.Auto}},
+        {{TypeIdentifierValueModeEnumName}} unmanagedFieldBitMaskMode = {{TypeIdentifierValueModeEnumName}}.{{TypeIdentifierValueMode.AutoAssign}},
         ulong unmanagedFieldMask = 0)
     {
         UnmanagedFieldBitMaskMode = unmanagedFieldBitMaskMode;
@@ -108,6 +141,7 @@ internal sealed class {{EnumBitPatternAttributeName}} : Attribute
         """;
 
     public static readonly string CompilerServicesIUnionSource = """
+        #nullable enable
         namespace System.Runtime.CompilerServices;
 
         internal interface IUnion

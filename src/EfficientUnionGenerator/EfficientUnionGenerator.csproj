@@ -28,7 +28,7 @@
   </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="akanse.SourceGeneratorToolkit" Version="0.1.1">
+        <PackageReference Include="akanse.SourceGeneratorToolkit" Version="0.3.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

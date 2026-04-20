@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using SourceGeneratorToolkit;
 
 namespace EfficientUnionGenerator;
+using static Constants;
 
 [Generator(LanguageNames.CSharp)]
 public partial class EfficientUnionGenerator : IIncrementalGenerator
@@ -85,8 +85,8 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
             candidateUnmanagedTypes.ToImmutable(),
             candidateManagedTypes.ToImmutable(),
             bitMask,
-            mode,
-            new SourceBuilder(context, false));
+            mode
+            ) { SourceBuilder = new SourceBuilder(context, false) };
     }
 
 
@@ -164,7 +164,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                 }
                 foreach (var type in source.CandidateUnmanagedTypes)
                 {
-                    if ((mode & TypeIdentifierValueMode.LeaveWhenCreate) == 0)
+                    if (mode.IsLeaveWhenCreate)
                     {
                         sb.AppendLine($$"""
                             public partial {{sb.TargetType.Name}}({{type.TypeName}} {{type.ConstructorParameterName}})
@@ -190,7 +190,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                             """);
                     }
 
-                    if(source.BitMask == 0 || (mode & TypeIdentifierValueMode.LeaveWhenGet) == 0)
+                    if(source.BitMask == 0 || mode.IsLeaveWhenGet)
                     {
                         sb.AppendLine($$"""
                             public bool TryGetValue(out {{type.TypeName}} value)
@@ -318,7 +318,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                                         {
                                         """);
 
-        if ((mode & TypeIdentifierValueMode.ExplicitAssign) != 0)
+        if (mode.IsExplicitAssign)
         {
             foreach (var type in types)
             {
@@ -340,7 +340,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
         }
         else
         {
-            foreach (var (type, pattern) in types.Zip(GetBitPatterns(bitMask), static (x, y) => (x, y)))
+            foreach (var (type, pattern) in types.Zip(Helpers.GetBitPatterns(bitMask), static (x, y) => (x, y)))
             {
                 sb.AppendLine($$"""
                                             {{type.FieldName}} = {{pattern}},
@@ -356,198 +356,4 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
     }
 
 
-    private static IEnumerable<ulong> GetBitPatterns(ulong mask)
-    {
-        if (mask == 0UL)
-        {
-            yield return 0UL;
-            yield break;
-        }
-
-        var positions = new List<int>();
-        for (int bit = 0; bit < 64; bit++)
-        {
-            if ((mask & (1UL << bit)) != 0UL)
-            {
-                positions.Add(bit);
-            }
-        }
-
-        int n = positions.Count;
-        if (n == 0)
-        {
-            yield return 0UL;
-            yield break;
-        }
-
-        static IEnumerable<ulong> recurse(List<int> positions, int idx, ulong current)
-        {
-            if (idx < 0)
-            {
-                yield return current;
-                yield break;
-            }
-
-            foreach (var v in recurse(positions, idx - 1, current))
-                yield return v;
-
-            ulong bitValue = 1UL << positions[idx];
-            foreach (var v in recurse(positions, idx - 1, current | bitValue))
-                yield return v;
-        }
-
-        foreach (var p in recurse(positions, n - 1, 0UL))
-            yield return p;
-    }
-
-
-    private sealed record UnionTypeDefinition(
-        string TypeName,
-        ImmutableArray<TypeCandidateDefinition> CandidateUnmanagedTypes,
-        ImmutableArray<TypeCandidateDefinition> CandidateManagedTypes,
-        ulong BitMask,
-        TypeIdentifierValueMode TypeIdentifierValueMode,
-        SourceBuilder SourceBuilder)
-    {
-        public string TypeIdentifierBaseType => BitMask switch
-        {
-            <= byte.MaxValue => " : byte",
-            <= ushort.MaxValue => " : ushort",
-            <= uint.MaxValue => " : uint",
-            _ => " : ulong",
-        };
-
-        public IEnumerable<string> GetUnmanagedFieldDecl()
-        {
-            foreach (var type in CandidateUnmanagedTypes)
-            {
-                yield return $$"""
-                    [System.Runtime.InteropServices.FieldOffset(0)] public {{type.TypeName}} {{type.FieldName}};
-                    """;
-            }
-        }
-
-        public override int GetHashCode()
-        {
-            var hash = (uint)TypeName.GetHashCode();
-            foreach (var candidate in CandidateUnmanagedTypes)
-            {
-                hash = (hash << 13) | (hash >> 19);
-                hash ^= (uint)candidate.GetHashCode();
-            }
-            foreach (var candidate in CandidateManagedTypes)
-            {
-                hash = (hash << 13) | (hash >> 19);
-                hash ^= (uint)candidate.GetHashCode();
-            }
-            return (int)hash;
-        }
-
-        public bool Equals(UnionTypeDefinition? other)
-        {
-            if (other is null)
-            {
-                return false;
-            }
-
-            if (TypeName != other.TypeName)
-            {
-                return false;
-            }
-
-            if (CandidateUnmanagedTypes.Length != other.CandidateUnmanagedTypes.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < CandidateUnmanagedTypes.Length; i++)
-            {
-                if (CandidateUnmanagedTypes[i] != other.CandidateUnmanagedTypes[i])
-                {
-                    return false;
-                }
-            }
-
-            if (CandidateManagedTypes.Length != other.CandidateManagedTypes.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < CandidateManagedTypes.Length; i++)
-            {
-                if (CandidateManagedTypes[i] != other.CandidateManagedTypes[i])
-                {
-                    return false;
-                }
-            }
-
-            if (BitMask != other.BitMask)
-            {
-                return false;
-            }
-
-            if (TypeIdentifierValueMode != other.TypeIdentifierValueMode)
-            {
-                return false;
-            }
-
-            // SourceBuilder is not considered for equality as it is used for code generation and does not affect the identity of the union type definition.
-            return true;
-        }
-    }
-
-    private sealed record TypeCandidateDefinition(
-        string TypeName,
-        bool IsUnmanaged,
-        string ConstructorParameterName,
-        ulong EnumBitPattern
-        )
-    {
-        private static string CreateSafeFileName(string typeName)
-        {
-            var sb = new StringBuilder();
-            sb.Append("__");
-            foreach (var c in typeName)
-            {
-                if (char.IsLetterOrDigit(c))
-                {
-                    sb.Append(c);
-                }
-                else
-                {
-                    sb.Append($"_u{(int)c:X04}_");
-                }
-            }
-            return sb.ToString();
-        }
-
-        public string FieldName { get; } = CreateSafeFileName(TypeName);
-
-        public static TypeCandidateDefinition? Create(IMethodSymbol ctor)
-        {
-            if (ctor.MethodKind != MethodKind.Constructor)
-            {
-                return null;
-            }
-            if (ctor.DeclaredAccessibility != Accessibility.Public)
-            {
-                return null;
-            }
-            if (ctor.Parameters.Length != 1)
-            {
-                return null;
-            }
-
-            var param = ctor.Parameters[0];
-            var typeName = param.Type.ToDisplayString();
-            var isUnmanaged = param.Type.IsUnmanagedType;
-            var constructorParameterName = param.Name;
-            var enumBitPattern = ctor.GetAttributes()
-                .FirstOrDefault(static attr => attr.AttributeClass?.ToDisplayString() == $"{AttributeNamespace}.{EnumBitPatternAttributeName}")
-                ?.ConstructorArguments[0]
-                .Value as ulong?
-                ?? 0;
-            return new TypeCandidateDefinition(typeName, isUnmanaged, constructorParameterName, enumBitPattern);
-        }
-    }
 }

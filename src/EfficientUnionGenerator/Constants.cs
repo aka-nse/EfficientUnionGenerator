@@ -4,21 +4,8 @@ using System.Text;
 
 namespace EfficientUnionGenerator;
 
-partial class EfficientUnionGenerator
+internal static class Constants
 {
-    [Flags]
-    private enum TypeIdentifierValueMode
-    {
-        AutoAssign     = 0b0,
-        ExplicitAssign = 0b1,
-
-        SetWhenCreate   = 0b00,
-        LeaveWhenCreate = 0b10,
-
-        ResetWhenGet = 0b000,
-        LeaveWhenGet = 0b100,
-    }
-
     public const string AttributeNamespace = "EfficientUnion";
 
     public const string EfficientUnionAttributeName = "EfficientUnionAttribute";

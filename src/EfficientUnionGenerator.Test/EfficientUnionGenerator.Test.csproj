@@ -24,7 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EfficientUnionGenerator\EfficientUnionGenerator.csproj" />
+      <ProjectReference Include="..\EfficientUnionGenerator\EfficientUnionGenerator.csproj">
+          <OutputItemType>Analyzer</OutputItemType>
+          <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

@@ -6,7 +6,7 @@ namespace EfficientUnionGenerator;
 using static Constants;
 
 [Generator(LanguageNames.CSharp)]
-public partial class EfficientUnionGenerator : IIncrementalGenerator
+public partial class Generator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -116,7 +116,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                         private readonly __UnmanagedField __unmanagedField;
                         private readonly __TypeSpecifier __typeSpecifier;
 
-                        private bool HasUnmanagedValue => __typeSpecifier != __TypeSpecifier.__Undefined;
+                        private bool HasUnmanagedValue => __typeSpecifier != __TypeSpecifier.__Undefined || __defaultTypeSpecifierHasType;
                         private object? UnmanagedValue => __typeSpecifier switch
                         {
                             {{source.CandidateUnmanagedTypes.Select(static t => $"__TypeSpecifier.{t.FieldName} => __unmanagedField.{t.FieldName},").PreserveIndent()}}
@@ -143,14 +143,14 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                             get => __unmanagedField.__typeSpecifier & __typeSpecifierBitMask;
                             init => __unmanagedField.__typeSpecifier |= value;
                         }
-
-                        private bool HasUnmanagedValue => __typeSpecifier != __TypeSpecifier.__Undefined;
+                        
+                        private bool HasUnmanagedValue => __typeSpecifier != __TypeSpecifier.__Undefined || __defaultTypeSpecifierHasType;
                         private object? UnmanagedValue
                         {
                             get
                             {
                                 var maskedField = __unmanagedField;
-                                maskedField.__typeSpecifier ^= __typeSpecifierBitMask;
+                                maskedField.__typeSpecifier &= ~__typeSpecifierBitMask;
                                 return __typeSpecifier switch
                                 {
                                     {{source.CandidateUnmanagedTypes.Select(static t => $"__TypeSpecifier.{t.FieldName} => maskedField.{t.FieldName},").PreserveIndent()}}
@@ -164,7 +164,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                 }
                 foreach (var type in source.CandidateUnmanagedTypes)
                 {
-                    if (mode.IsLeaveWhenCreate)
+                    if (!mode.IsLeaveWhenCreate)
                     {
                         sb.AppendLine($$"""
                             public partial {{sb.TargetType.Name}}({{type.TypeName}} {{type.ConstructorParameterName}})
@@ -217,7 +217,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                                 if (__typeSpecifier == __TypeSpecifier.{{type.FieldName}})
                                 {
                                     var maskedField = __unmanagedField;
-                                    maskedField.__typeSpecifier ^= __typeSpecifierBitMask;
+                                    maskedField.__typeSpecifier &= ~__typeSpecifierBitMask;
                                     value = maskedField.{{type.FieldName}};
                                     return true;
                                 }
@@ -313,6 +313,7 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
         var mode = source.TypeIdentifierValueMode;
         var bitMask = source.BitMask;
         var types = source.CandidateUnmanagedTypes;
+        var defaultTypeSpecifierHasType = "false";
         sb.AppendLine($$"""
                                         private enum __TypeSpecifier{{baseType}}
                                         {
@@ -325,6 +326,10 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                 sb.AppendLine($$"""
                                             {{type.FieldName}} = {{type.EnumBitPattern}},
                                         """);
+                if (type.EnumBitPattern == 0)
+                {
+                    defaultTypeSpecifierHasType = "true";
+                }
             }
         }
         else if(bitMask == 0)
@@ -345,13 +350,18 @@ public partial class EfficientUnionGenerator : IIncrementalGenerator
                 sb.AppendLine($$"""
                                             {{type.FieldName}} = {{pattern}},
                                         """);
+                if (type.EnumBitPattern == 0)
+                {
+                    defaultTypeSpecifierHasType = "true";
+                }
             }
         }
         sb.AppendLine($$"""
                                         
                                             __Undefined = 0,
                                         }
-                                        
+
+                                        private const bool __defaultTypeSpecifierHasType = {{defaultTypeSpecifierHasType}};
                                         """);
     }
 

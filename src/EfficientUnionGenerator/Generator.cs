@@ -107,59 +107,82 @@ public partial class Generator : IIncrementalGenerator
                 if (source.BitMask == 0)
                 {
                     sb.AppendLine($$"""
-                        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
-                        private struct __UnmanagedField
-                        {
-                            {{source.GetUnmanagedFieldDecl().PreserveIndent()}}
-                        }
+                                        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
+                                        private struct __UnmanagedField
+                                        {
+                                            {{source.GetUnmanagedFieldDecl().PreserveIndent()}}
+                                        }
 
-                        private readonly __UnmanagedField __unmanagedField;
-                        private readonly __TypeSpecifier __typeSpecifier;
+                                        private readonly __UnmanagedField __unmanagedField;
+                                        private readonly __TypeSpecifier __typeSpecifier;
 
-                        private bool HasUnmanagedValue => __typeSpecifier != __TypeSpecifier.__Undefined || __defaultTypeSpecifierHasType;
-                        private object? UnmanagedValue => __typeSpecifier switch
-                        {
-                            {{source.CandidateUnmanagedTypes.Select(static t => $"__TypeSpecifier.{t.FieldName} => __unmanagedField.{t.FieldName},").PreserveIndent()}}
-                            _ => null,
-                        };
+                                        private bool HasUnmanagedValue => __typeSpecifier != __TypeSpecifier.__Undefined || __defaultTypeSpecifierHasType;
+                                        private object? UnmanagedValue => __typeSpecifier switch
+                                        {
+                                            {{source.CandidateUnmanagedTypes.Select(static t => $"__TypeSpecifier.{t.FieldName} => __unmanagedField.{t.FieldName},").PreserveIndent()}}
+                                            _ => null,
+                                        };
 
-                        """);
+                                        """);
                 }
                 else
                 {
                     sb.AppendLine($$"""
-                        private const __TypeSpecifier __typeSpecifierBitMask = unchecked((__TypeSpecifier){{source.BitMask}});
+                                        private const __TypeSpecifier __typeSpecifierBitMask = unchecked((__TypeSpecifier){{source.BitMask}});
 
-                        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
-                        private struct __UnmanagedField
-                        {
-                            [System.Runtime.InteropServices.FieldOffset(0)] public __TypeSpecifier __typeSpecifier;
-                            {{source.GetUnmanagedFieldDecl().PreserveIndent()}}
-                        }
+                                        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
+                                        private struct __UnmanagedField
+                                        {
+                                            [System.Runtime.InteropServices.FieldOffset(0)] public __TypeSpecifier __typeSpecifier;
+                                            {{source.GetUnmanagedFieldDecl().PreserveIndent()}}
+                                        }
 
-                        private readonly __UnmanagedField __unmanagedField;
-                        private readonly __TypeSpecifier __typeSpecifier
-                        {
-                            get => __unmanagedField.__typeSpecifier & __typeSpecifierBitMask;
-                            init => __unmanagedField.__typeSpecifier |= value;
-                        }
+                                        private readonly __UnmanagedField __unmanagedField;
+                                        private readonly __TypeSpecifier __typeSpecifier
+                                        {
+                                            get => __unmanagedField.__typeSpecifier & __typeSpecifierBitMask;
+                                            init => __unmanagedField.__typeSpecifier |= value;
+                                        }
                         
-                        private bool HasUnmanagedValue => __typeSpecifier != __TypeSpecifier.__Undefined || __defaultTypeSpecifierHasType;
-                        private object? UnmanagedValue
-                        {
-                            get
-                            {
-                                var maskedField = __unmanagedField;
-                                maskedField.__typeSpecifier &= ~__typeSpecifierBitMask;
-                                return __typeSpecifier switch
-                                {
-                                    {{source.CandidateUnmanagedTypes.Select(static t => $"__TypeSpecifier.{t.FieldName} => maskedField.{t.FieldName},").PreserveIndent()}}
-                                    _ => null,
-                                };
-                            }
-                        }
-
-                        """);
+                                        private bool HasUnmanagedValue => __typeSpecifier != __TypeSpecifier.__Undefined || __defaultTypeSpecifierHasType;
+                                        """);
+                    if (mode.IsLeaveWhenGet)
+                    {
+                        sb.AppendLine($$"""
+                                        private object? UnmanagedValue
+                                        {
+                                            get
+                                            {
+                                                var maskedField = __unmanagedField;
+                                                return __typeSpecifier switch
+                                                {
+                                                    {{source.CandidateUnmanagedTypes.Select(static t => $"__TypeSpecifier.{t.FieldName} => maskedField.{t.FieldName},").PreserveIndent()}}
+                                                    _ => null,
+                                                };
+                                            }
+                                        }
+                                        
+                                        """);
+                    }
+                    else
+                    {
+                        sb.AppendLine($$"""
+                                        private object? UnmanagedValue
+                                        {
+                                            get
+                                            {
+                                                var maskedField = __unmanagedField;
+                                                maskedField.__typeSpecifier &= ~__typeSpecifierBitMask;
+                                                return __typeSpecifier switch
+                                                {
+                                                    {{source.CandidateUnmanagedTypes.Select(static t => $"__TypeSpecifier.{t.FieldName} => maskedField.{t.FieldName},").PreserveIndent()}}
+                                                    _ => null,
+                                                };
+                                            }
+                                        }
+                                        
+                                        """);
+                    }
 
                 }
                 foreach (var type in source.CandidateUnmanagedTypes)

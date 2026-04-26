@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using EfficientUnion;
@@ -295,6 +296,7 @@ public partial class EfficientUnionGeneratorTest
     [Fact]
     public void TestBitFlagUnion_Default()
     {
+        Assert.Equal(8, Unsafe.SizeOf<TestUnion_BitFlag_Default>());
         {
             var content = new BitFlagUnionContent1(42);
             var u = new TestUnion_BitFlag_Default(content);
@@ -353,3 +355,90 @@ public partial class EfficientUnionGeneratorTest
         }
     }
 }
+
+
+
+[EfficientUnion(
+    EfficientUnion.TypeIdentifierValueMode.ExplicitAssign
+    | EfficientUnion.TypeIdentifierValueMode.LeaveWhenCreate
+    | EfficientUnion.TypeIdentifierValueMode.LeaveWhenGet, 0xF000_0000_0000_0000uL)]
+public partial struct TestUnion_BitFlag_MagicNumber
+{
+    [EnumBitPattern(1uL << 60)] public partial TestUnion_BitFlag_MagicNumber(BitFlagUnionContent1 content);
+    [EnumBitPattern(1uL << 61)] public partial TestUnion_BitFlag_MagicNumber(BitFlagUnionContent2 content);
+    [EnumBitPattern(1uL << 62)] public partial TestUnion_BitFlag_MagicNumber(BitFlagUnionContent3 content);
+    [EnumBitPattern(1uL << 63)] public partial TestUnion_BitFlag_MagicNumber(BitFlagUnionContent4 content);
+}
+
+public partial class EfficientUnionGeneratorTest
+{
+    [Fact]
+    public void TestBitFlagUnion_MagicNumber()
+    {
+        Assert.Equal(8, Unsafe.SizeOf<TestUnion_BitFlag_MagicNumber>());
+        {
+            var value = 42uL | (1uL << 60);
+            var content = new BitFlagUnionContent1(value);
+            var u = new TestUnion_BitFlag_MagicNumber(content);
+
+            Assert.True(u.HasValue);
+            Assert.IsType<BitFlagUnionContent1>(u.Value);
+            Assert.Equal(value, ((BitFlagUnionContent1)u.Value).A);
+
+            Assert.True(u.TryGetValue(out BitFlagUnionContent1 contentValue));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent2 _));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent3 _));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent4 _));
+            Assert.Equal(value, contentValue.A);
+        }
+        {
+            var value = 84uL | (1uL << 61);
+            var content = new BitFlagUnionContent2(value);
+            var u = new TestUnion_BitFlag_MagicNumber(content);
+
+            Assert.True(u.HasValue);
+            Assert.IsType<BitFlagUnionContent2>(u.Value);
+            Assert.Equal(value, ((BitFlagUnionContent2)u.Value).B);
+
+            Assert.True(u.TryGetValue(out BitFlagUnionContent2 contentValue));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent1 _));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent3 _));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent4 _));
+            Assert.Equal(value, contentValue.B);
+        }
+        {
+            var value = 126uL | (1uL << 62);
+            var content = new BitFlagUnionContent3(value);
+            var u = new TestUnion_BitFlag_MagicNumber(content);
+
+            Assert.True(u.HasValue);
+            Assert.IsType<BitFlagUnionContent3>(u.Value);
+            Assert.Equal(value, ((BitFlagUnionContent3)u.Value).C);
+
+            Assert.True(u.TryGetValue(out BitFlagUnionContent3 contentValue));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent1 _));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent2 _));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent4 _));
+            Assert.Equal(value, contentValue.C);
+        }
+        {
+            var value = 168uL | (1uL << 63);
+            var content = new BitFlagUnionContent4(value);
+            var u = new TestUnion_BitFlag_MagicNumber(content);
+
+            Assert.True(u.HasValue);
+            Assert.IsType<BitFlagUnionContent4>(u.Value);
+            Assert.Equal(value, ((BitFlagUnionContent4)u.Value).D);
+
+            Assert.True(u.TryGetValue(out BitFlagUnionContent4 contentValue));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent1 _));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent2 _));
+            Assert.False(u.TryGetValue(out BitFlagUnionContent3 _));
+            Assert.Equal(value, contentValue.D);
+        }
+    }
+
+
+
+}
+

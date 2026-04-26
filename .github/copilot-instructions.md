@@ -1,4 +1,4 @@
-# Copilot Instructions for RunaString
+# Copilot Instructions for EfficientUnionGenerator
 
 ## What's this file for?
 

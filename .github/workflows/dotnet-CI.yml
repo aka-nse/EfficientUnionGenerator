@@ -19,10 +19,10 @@ jobs:
         dotnet-version: '10.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore RunaString.slnx
+      run: dotnet restore EfficientUnionGenerator.slnx
 
     - name: Build solution
-      run: dotnet build RunaString.slnx --no-restore
+      run: dotnet build EfficientUnionGenerator.slnx --no-restore
 
     - name: Run tests
-      run: dotnet test RunaString.slnx --no-build --verbosity normal
+      run: dotnet test EfficientUnionGenerator.slnx --no-build --verbosity normal

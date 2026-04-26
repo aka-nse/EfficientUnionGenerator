@@ -2,7 +2,7 @@
   "profiles": {
     "プロファイル 1": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\EfficientUnionGenerator.DebugApp\\EfficientUnionGenerator.DebugApp.csproj"
+      "targetProject": "..\\EfficientUnionGenerator.SampleApp\\EfficientUnionGenerator.SampleApp.csproj"
     }
   }
 }

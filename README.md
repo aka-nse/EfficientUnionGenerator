@@ -2,9 +2,8 @@
 
 [<img src="https://img.shields.io/badge/-GitHub-blue.svg?logo=github" />](https://github.com/aka-nse/EfficientUnionGenerator)
 
-<!--
 [<img src="https://img.shields.io/badge/-NuGet-019733.svg?logo=nuget" />](https://www.nuget.org/packages/akanse.EfficientUnionGenerator/)
--->
+
 
 Based on C# 15's Union type support, EfficientUnionGenerator provides highly efficient Union type support that avoids boxing.
 

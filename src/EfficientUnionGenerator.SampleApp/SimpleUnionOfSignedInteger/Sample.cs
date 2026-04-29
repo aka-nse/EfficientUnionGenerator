@@ -5,7 +5,7 @@ namespace EfficientUnionGenerator.SampleApp.SimpleUnionOfSignedInteger;
 
 internal class Sample : ISample
 {
-    public string Name => "SimpleUnionOfInt32OrString";
+    public string Name => "SimpleUnionOfSignedInteger";
 
     public void Run()
     {

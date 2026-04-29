@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/etc/">
+    <File Path=".editorconfig" />
+    <File Path="global.json" />
+    <File Path="LICENSE.txt" />
+    <File Path="README.md" />
+  </Folder>
   <Project Path="src/EfficientUnionGenerator.SampleApp/EfficientUnionGenerator.SampleApp.csproj" Id="328c4817-42f5-44d3-be03-8118c44d1d58" />
   <Project Path="src/EfficientUnionGenerator.Test/EfficientUnionGenerator.Test.csproj" Id="b0f436db-3eee-48fb-aaf8-264e78a1a938" />
   <Project Path="src/EfficientUnionGenerator/EfficientUnionGenerator.csproj" Id="7b1b2fc2-1729-497a-be6a-5970166dc8b6" />

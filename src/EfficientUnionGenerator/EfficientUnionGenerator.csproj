@@ -16,7 +16,7 @@
 
       <PackageId>akanse.$(AssemblyName)</PackageId>
       <Title>EfficientUnionGenerator</Title>
-      <Version>0.1.0.0</Version>
+      <Version>0.1.0.1</Version>
       <Authors>aka-nse</Authors>
       <Company />
       <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -36,8 +36,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="../../readme.md" Pack="true" PackagePath="" />
-        <None Include="../../LICENSE.txt" Pack="true" PackagePath="" />
+        <None Include="$(ProjectDir)../../LICENSE.txt" Pack="true" PackagePath="/" />
+        <None Include="$(ProjectDir)../../README.md" Pack="true" PackagePath="/" />
+        <None Include="$(OutputPath)/$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
 </Project>

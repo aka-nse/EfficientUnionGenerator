@@ -20,7 +20,7 @@
       <Authors>aka-nse</Authors>
       <Company />
       <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-      <PackageReadmeFile>readme.md</PackageReadmeFile>
+      <PackageReadmeFile>README.md</PackageReadmeFile>
       <RepositoryUrl>https://github.com/aka-nse/EfficientUnionGenerator</RepositoryUrl>
       <PackageProjectUrl>https://github.com/aka-nse/EfficientUnionGenerator</PackageProjectUrl>
       <PackageTags>Generator</PackageTags>

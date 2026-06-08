@@ -42,7 +42,7 @@ public readonly partial struct Int32OrString
 #nullable enable
 namespace EfficientUnionGenerator.SampleApp.SimpleUnionOfInt32OrString;
 
-
+[System.Runtime.CompilerServices.Union]
 partial struct Int32OrString
 {
     private enum __TypeSpecifier : byte
@@ -146,7 +146,7 @@ public readonly partial struct SignedInteger
 #nullable enable
 namespace EfficientUnionGenerator.SampleApp.SimpleUnionOfSignedInteger;
 
-
+[System.Runtime.CompilerServices.Union]
 partial struct SignedInteger
 {
     private enum __TypeSpecifier : byte
@@ -312,7 +312,7 @@ public static class Program
 #nullable enable
 namespace EfficientUnionGenerator.SampleApp.PositiveOnlyIntOrFloat;
 
-
+[System.Runtime.CompilerServices.Union]
 partial struct PositiveOnlyIntOrFloat
 {
     private enum __TypeSpecifier : uint
@@ -444,7 +444,7 @@ public readonly partial struct ElfHeader
 #nullable enable
 namespace EfficientUnionGenerator.SampleApp.ElfHeader;
 
-
+[System.Runtime.CompilerServices.Union]
 partial struct ElfHeader
 {
     private enum __TypeSpecifier : ulong

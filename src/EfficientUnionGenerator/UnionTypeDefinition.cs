@@ -10,6 +10,9 @@ public record UnionTypeDefinition(
     ulong BitMask,
     TypeIdentifierValueMode TypeIdentifierValueMode)
 {
+    // SourceBuilder is a string builder for the generated source code.
+    // It contains information about the generation target type, but is not part of the type's logical state.
+    // Therefore, it should not be considered for equality comparison or hash code generation.
     internal SourceBuilder SourceBuilder { get; init; } = default!;
 
 
@@ -21,6 +24,7 @@ public record UnionTypeDefinition(
         _ => " : ulong",
     };
 
+
     public IEnumerable<string> GetUnmanagedFieldDecl()
     {
         foreach (var type in CandidateUnmanagedTypes)
@@ -31,71 +35,11 @@ public record UnionTypeDefinition(
         }
     }
 
-    public override int GetHashCode()
-    {
-        var hash = (uint)TypeName.GetHashCode();
-        foreach (var candidate in CandidateUnmanagedTypes)
-        {
-            hash = (hash << 13) | (hash >> 19);
-            hash ^= (uint)candidate.GetHashCode();
-        }
-        foreach (var candidate in CandidateManagedTypes)
-        {
-            hash = (hash << 13) | (hash >> 19);
-            hash ^= (uint)candidate.GetHashCode();
-        }
-        return (int)hash;
-    }
 
-    public virtual bool Equals(UnionTypeDefinition? other)
-    {
-        if (other is null)
-        {
-            return false;
-        }
+    public override int GetHashCode() =>
+        UnionTypeDefinitionEqualityComparer.GetHashCode(this);
 
-        if (TypeName != other.TypeName)
-        {
-            return false;
-        }
 
-        if (CandidateUnmanagedTypes.Length != other.CandidateUnmanagedTypes.Length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < CandidateUnmanagedTypes.Length; i++)
-        {
-            if (CandidateUnmanagedTypes[i] != other.CandidateUnmanagedTypes[i])
-            {
-                return false;
-            }
-        }
-
-        if (CandidateManagedTypes.Length != other.CandidateManagedTypes.Length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < CandidateManagedTypes.Length; i++)
-        {
-            if (CandidateManagedTypes[i] != other.CandidateManagedTypes[i])
-            {
-                return false;
-            }
-        }
-
-        if (BitMask != other.BitMask)
-        {
-            return false;
-        }
-
-        if (TypeIdentifierValueMode != other.TypeIdentifierValueMode)
-        {
-            return false;
-        }
-
-        // SourceBuilder is not considered for equality as it is used for code generation and does not affect the identity of the union type definition.
-        return true;
-    }
+    public virtual bool Equals(UnionTypeDefinition? other) =>
+        UnionTypeDefinitionEqualityComparer.Equals(this, other);
 }

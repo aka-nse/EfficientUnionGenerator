@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using EfficientUnion;
 
 namespace EfficientUnionGenerator.SampleApp.SimpleUnionOfInt32OrString;
 
@@ -40,12 +39,4 @@ internal class Sample : ISample
         }
 #endif
     }
-}
-
-
-[EfficientUnion]
-public readonly partial struct Int32OrString
-{
-    public partial Int32OrString(int x);
-    public partial Int32OrString(string x);
 }

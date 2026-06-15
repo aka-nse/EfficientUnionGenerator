@@ -10,12 +10,6 @@ public record UnionTypeDefinition(
     ulong BitMask,
     TypeIdentifierValueMode TypeIdentifierValueMode)
 {
-    // SourceBuilder is a string builder for the generated source code.
-    // It contains information about the generation target type, but is not part of the type's logical state.
-    // Therefore, it should not be considered for equality comparison or hash code generation.
-    internal SourceBuilder SourceBuilder { get; init; } = default!;
-
-
     public string TypeIdentifierBaseType => BitMask switch
     {
         <= byte.MaxValue => " : byte",

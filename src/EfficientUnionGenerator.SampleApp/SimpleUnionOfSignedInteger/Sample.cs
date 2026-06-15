@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using EfficientUnion;
 
 namespace EfficientUnionGenerator.SampleApp.SimpleUnionOfSignedInteger;
 
@@ -58,13 +57,4 @@ internal class Sample : ISample
         }
 #endif
     }
-}
-
-[EfficientUnion]
-public readonly partial struct SignedInteger
-{
-    public partial SignedInteger(sbyte x);
-    public partial SignedInteger(short x);
-    public partial SignedInteger(int x);
-    public partial SignedInteger(long x);
 }

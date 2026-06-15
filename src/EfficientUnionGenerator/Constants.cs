@@ -1,6 +1,6 @@
 namespace EfficientUnionGenerator;
 
-internal static class Constants
+public static class Constants
 {
     public const string AttributeNamespace = "EfficientUnion";
 

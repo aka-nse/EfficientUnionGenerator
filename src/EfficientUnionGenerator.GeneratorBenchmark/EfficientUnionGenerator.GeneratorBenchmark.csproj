@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\EfficientUnionGenerator\EfficientUnionGenerator.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="../EfficientUnionGenerator.SampleApp/SimpleUnionOfInt32OrString/Int32OrString.cs" />
+        <EmbeddedResource Include="../EfficientUnionGenerator.SampleApp/SimpleUnionOfSignedInteger/SignedInteger.cs" />
+        <EmbeddedResource Include="../EfficientUnionGenerator.SampleApp/PositiveOnlyIntOrFloat/PositiveOnlyIntOrFloat.cs" />
+        <EmbeddedResource Include="../EfficientUnionGenerator.SampleApp/ElfHeader/ElfHeader.cs" />
+        <EmbeddedResource Update="../EfficientUnionGenerator.SampleApp/**/*.cs" LinkBase="resources" />
+    </ItemGroup>
+
+</Project>

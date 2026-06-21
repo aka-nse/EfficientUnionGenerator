@@ -18,9 +18,13 @@ public partial class GeneratorBenchmarkContext
     public string? TypeName { get; set; } = null!;
 
     private IIncrementalGenerator _generator = null!;
+    private IIncrementalGenerator _negativeControlGenerator = null!;
     private Compilation _baseCompilation = null!;
     private Compilation _changedCompilation = null!;
-    private GeneratorDriver _driver = null!;
+
+    [Params("Experimental", "NegativeControl")]
+    public string Target { get; set; } = null!;
+    private GeneratorDriver TargetDriver { get; set; } = null!;
 
     public string? SourceCode { get; private set; }
 
@@ -44,6 +48,7 @@ public partial class GeneratorBenchmarkContext
         }
 
         _generator = new Generator();
+        _negativeControlGenerator = new NegativeControlGenerator();
 
         var tree = CSharpSyntaxTree.ParseText(SourceCode);
         _baseCompilation = CSharpCompilation.Create(
@@ -62,21 +67,27 @@ public partial class GeneratorBenchmarkContext
     [IterationSetup]
     public void ResetDriver()
     {
-        _driver = CSharpGeneratorDriver
-            .Create(_generator);
+        TargetDriver = Target switch
+        {
+            "Experimental" => CSharpGeneratorDriver
+                .Create(_generator),
+            "NegativeControl" => CSharpGeneratorDriver
+                .Create(_negativeControlGenerator),
+            _ => throw new InvalidOperationException($"Unknown target: {Target}"),
+        };
     }
 
     [Benchmark]
     public void RunGenerator()
     {
-        _driver = _driver
+        TargetDriver = TargetDriver
             .RunGenerators(_baseCompilation);
     }
 
     [Benchmark]
     public void IncrementalUpdate_NoChanges()
     {
-        _driver = _driver
+        TargetDriver = TargetDriver
             .RunGenerators(_baseCompilation)
             .RunGenerators(_baseCompilation)
             .RunGenerators(_baseCompilation)
@@ -90,9 +101,9 @@ public partial class GeneratorBenchmarkContext
     }
 
     [Benchmark]
-    public void IncrementalUpdate_WholeRegenerationRequired()
+    public void IncrementalUpdate_Regenerate()
     {
-        _driver = _driver
+        TargetDriver = TargetDriver
             .RunGenerators(_baseCompilation)
             .RunGenerators(_changedCompilation)
             .RunGenerators(_baseCompilation)

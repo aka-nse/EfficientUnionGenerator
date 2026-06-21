@@ -1,4 +1,9 @@
 <Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Profiling" />
+    <BuildType Name="Release" />
+  </Configurations>
   <Folder Name="/etc/">
     <File Path=".editorconfig" />
     <File Path="global.json" />

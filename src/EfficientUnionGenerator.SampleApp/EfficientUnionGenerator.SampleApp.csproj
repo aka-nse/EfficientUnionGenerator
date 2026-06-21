@@ -9,6 +9,7 @@
         <Nullable>enable</Nullable>
         <ReportAnalyzer>true</ReportAnalyzer>
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <Configurations>Debug;Release;Profiling</Configurations>
     </PropertyGroup>
 
     <ItemGroup>

@@ -74,9 +74,33 @@ public partial class GeneratorBenchmarkContext
     }
 
     [Benchmark]
-    public void IncrementalUpdate()
+    public void IncrementalUpdate_NoChanges()
     {
         _driver = _driver
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_baseCompilation);
+    }
+
+    [Benchmark]
+    public void IncrementalUpdate_WholeRegenerationRequired()
+    {
+        _driver = _driver
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_changedCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_changedCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_changedCompilation)
+            .RunGenerators(_baseCompilation)
+            .RunGenerators(_changedCompilation)
             .RunGenerators(_baseCompilation)
             .RunGenerators(_changedCompilation);
     }

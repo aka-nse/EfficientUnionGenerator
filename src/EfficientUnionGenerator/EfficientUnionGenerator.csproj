@@ -25,6 +25,7 @@
         <PackageProjectUrl>https://github.com/aka-nse/EfficientUnionGenerator</PackageProjectUrl>
         <PackageTags>Generator</PackageTags>
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <Configurations>Debug;Release;Profiling</Configurations>
     </PropertyGroup>
 
     <ItemGroup>
@@ -33,6 +34,10 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    </ItemGroup>
+    
+    <ItemGroup Condition="'$(Configuration)'=='Profiling'">
+        <PackageReference Include="akanse.PathBench" Version="1.1.0" />
     </ItemGroup>
 
     <ItemGroup>

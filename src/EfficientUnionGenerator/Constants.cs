@@ -1,22 +1,38 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace EfficientUnionGenerator;
 
-internal static class Constants
+public static class Constants
 {
     public const string AttributeNamespace = "EfficientUnion";
 
     public const string EfficientUnionAttributeName = "EfficientUnionAttribute";
 
+    public const string EfficientUnionAttributeFullName = $"{AttributeNamespace}.{EfficientUnionAttributeName}";
+
     public const string EnumBitPatternAttributeName = "EnumBitPatternAttribute";
 
     public const string TypeIdentifierValueModeEnumName = nameof(TypeIdentifierValueMode);
 
+    public const string CompilerServicesUnionAttributeSource = """
+        namespace System.Runtime.CompilerServices;
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false)]
+        internal sealed class UnionAttribute : Attribute;
+        """;
+
+    public const string CompilerServicesIUnionSource = """
+        #nullable enable
+        namespace System.Runtime.CompilerServices;
+
+        internal interface IUnion
+        {
+            object? Value { get; }
+        }
+        """;
+
     public static readonly string EfficientUnionAttributeSource = $$"""
 using System;
 namespace {{AttributeNamespace}};
+
 
 /// <summary>
 /// Indicates how to treat the fields corresponding to the set bits in the unmanaged field bit mask.
@@ -59,6 +75,18 @@ internal enum {{TypeIdentifierValueModeEnumName}} : int
     /// </summary>
     {{nameof(TypeIdentifierValueMode.LeaveWhenGet)}} = {{(int)TypeIdentifierValueMode.LeaveWhenGet}},
 }
+
+
+[AttributeUsage(AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
+internal sealed class {{EnumBitPatternAttributeName}} : Attribute
+{
+    public ulong Flag { get; }
+
+    public {{EnumBitPatternAttributeName}}(ulong flag)
+    {
+    }
+}
+
 
 /// <summary>
 /// Generates an efficient union struct implementation for the attributed struct.
@@ -107,33 +135,5 @@ internal sealed class {{EfficientUnionAttributeName}} : Attribute
         UnmanagedFieldMask = unmanagedFieldMask;
     }
 }
-
-
-[AttributeUsage(AttributeTargets.Constructor, Inherited = false, AllowMultiple = false)]
-internal sealed class {{EnumBitPatternAttributeName}} : Attribute
-{
-    public ulong Flag { get; }
-
-    public {{EnumBitPatternAttributeName}}(ulong flag)
-    {
-    }
-}
 """;
-
-    public static readonly string CompilerServicesUnionAttributeSource = """
-        namespace System.Runtime.CompilerServices;
-
-        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false)]
-        internal sealed class UnionAttribute : Attribute;
-        """;
-
-    public static readonly string CompilerServicesIUnionSource = """
-        #nullable enable
-        namespace System.Runtime.CompilerServices;
-
-        internal interface IUnion
-        {
-            object? Value { get; }
-        }
-        """;
 }

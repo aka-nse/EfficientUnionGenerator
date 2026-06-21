@@ -1,13 +1,24 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 using SourceGeneratorToolkit;
+using PathBench;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 
 namespace EfficientUnionGenerator;
+
 using static Constants;
 
 [Generator(LanguageNames.CSharp)]
 public partial class Generator : IIncrementalGenerator
 {
+    public static CodePathProfiler Profiler =
+        CodePathProfiler.Create();
+
+    private static IEqualityComparer<GeneratorAttributeSyntaxContext> AttributeSyntaxContextComparer { get; } =
+        new GeneratorAttributeSyntaxContextComparer(Profiler);
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(static cxt =>
@@ -42,67 +53,101 @@ public partial class Generator : IIncrementalGenerator
         });
 
         var sourceUnion = context.SyntaxProvider.ForAttributeWithMetadataName(
-            $"{AttributeNamespace}.{EfficientUnionAttributeName}",
-            static (node, token) => true,
-            PredicateUnionType);
+                $"{AttributeNamespace}.{EfficientUnionAttributeName}",
+                static (node, token) => node is ClassDeclarationSyntax or StructDeclarationSyntax,
+                static (context, token) => context)
+            .WithComparer(AttributeSyntaxContextComparer)
+            .Select(PredicateUnionType)
+            .WithComparer(UnitTypeGenerationInfoComparer.Instance);
         context.RegisterSourceOutput(sourceUnion, EmitUnionType);
     }
 
 
-    private static UnionTypeDefinition PredicateUnionType(GeneratorAttributeSyntaxContext context, CancellationToken token)
+    private static UnitTypeGenerationInfo? PredicateUnionType(
+        GeneratorAttributeSyntaxContext context,
+        CancellationToken token)
     {
+        using var counter = Profiler.StartMeasurement();
+
+        ((TypeDeclarationSyntax)context.TargetNode).ChildNodes().OfType<ConstructorDeclarationSyntax>().ToList();
+
         var symbol = (INamedTypeSymbol)context.TargetSymbol;
+
+        counter.MarkCheckpoint("After symbol retrieval");
+
         var fullName = symbol.ToDisplayString();
-        var candidateTypes = symbol
-            .GetMembers()
-            .OfType<IMethodSymbol>()
+
+        counter.MarkCheckpoint("After full name retrieval");
+
+        var unionTypeDefinitionAttributeData = context.Attributes
+            .FirstOrDefault(IsEfficientUnionAttribute);
+        if (unionTypeDefinitionAttributeData is null)
+        {
+            return null;
+        }
+
+        counter.MarkCheckpoint("After attribute data retrieval");
+
+        var members = symbol.Constructors;
+
+        counter.MarkCheckpoint("After members retrieval");
+
+        var candidateTypes = members
             .Select(TypeCandidateDefinition.Create)
             .OfType<TypeCandidateDefinition>();
+
+        counter.MarkCheckpoint("After candidate type creation");
+
         var candidateUnmanagedTypes = ImmutableArray.CreateBuilder<TypeCandidateDefinition>();
         var candidateManagedTypes = ImmutableArray.CreateBuilder<TypeCandidateDefinition>();
         foreach (var type in candidateTypes)
         {
             (type.IsUnmanaged ? candidateUnmanagedTypes : candidateManagedTypes).Add(type);
         }
-        TypeIdentifierValueMode mode;
-        ulong bitMask;
-        if (context.Attributes[0].ConstructorArguments.Length == 0)
-        {
-            mode = TypeIdentifierValueMode.AutoAssign;
-            bitMask = 0;
-        }
-        else if (context.Attributes[0].ConstructorArguments.Length == 2)
-        {
-            mode = (TypeIdentifierValueMode)(int)context.Attributes[0].ConstructorArguments[0].Value!;
-            bitMask = (ulong)context.Attributes[0].ConstructorArguments[1].Value!;
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported bit mask type");
-        }
-        return new UnionTypeDefinition(
-            fullName,
-            candidateUnmanagedTypes.ToImmutable(),
-            candidateManagedTypes.ToImmutable(),
-            bitMask,
-            mode
-            ) { SourceBuilder = new SourceBuilder(context, false) };
+
+        counter.MarkCheckpoint("After candidate type separation");
+
+        var (mode, bitMask) = ReadAttributeParameter(unionTypeDefinitionAttributeData);
+
+        counter.MarkCheckpoint("After attribute parameter reading");
+
+        return new(
+            new UnionTypeDefinition(
+                fullName,
+                candidateUnmanagedTypes.ToImmutable(),
+                candidateManagedTypes.ToImmutable(),
+                bitMask,
+                mode),
+            new SourceBuilder(context, false));
     }
 
 
-    private static void EmitUnionType(SourceProductionContext context, UnionTypeDefinition source)
+    private static void EmitUnionType(SourceProductionContext context, UnitTypeGenerationInfo? info)
     {
-        var sb = source.SourceBuilder;
+        if (info is null)
+        {
+            return;
+        }
+        var (source, sb) = info;
+        var (hintName, sourceCode) = GenerateImplementationSource(source, sb);
+        context.AddSource(
+            hintName,
+            sourceCode
+            );
+    }
+
+
+    internal static (string hintName, string sourceCode) GenerateImplementationSource(UnionTypeDefinition source, SourceBuilder sb)
+    {
         var mode = source.TypeIdentifierValueMode;
         sb.AppendAutoGeneratedComment();
         sb.AppendLine("#nullable enable");
         sb.AppendNamespaceDeclaration();
-        
 
         using (var typeDecl = sb.BeginTargetTypeDeclare())
         {
             typeDecl.AddAttribute($"System.Runtime.CompilerServices.Union");
-            GenerateTypeSpecifierEnumDeclaration(source);
+            GenerateTypeSpecifierEnumDeclaration(source, sb);
 
             if (source.CandidateUnmanagedTypes.Length > 0)
             {
@@ -215,7 +260,7 @@ public partial class Generator : IIncrementalGenerator
                             """);
                     }
 
-                    if(source.BitMask == 0 || mode.IsLeaveWhenGet)
+                    if (source.BitMask == 0 || mode.IsLeaveWhenGet)
                     {
                         sb.AppendLine($$"""
                             public bool TryGetValue(out {{type.TypeName}} value)
@@ -291,7 +336,7 @@ public partial class Generator : IIncrementalGenerator
                 }
             }
 
-            switch((source.CandidateUnmanagedTypes.Length > 0, source.CandidateManagedTypes.Length > 0))
+            switch ((source.CandidateUnmanagedTypes.Length > 0, source.CandidateManagedTypes.Length > 0))
             {
             case (true, true):
                 sb.AppendLine($$"""
@@ -324,16 +369,12 @@ public partial class Generator : IIncrementalGenerator
 
         var hintName = sb.GetPreferHintName(prefix: "EfficientUnionGenerator-", suffix: ".g");
         var sourceCode = sb.Build();
-        context.AddSource(
-            hintName,
-            sourceCode
-            );
+        return (hintName, sourceCode);
     }
 
 
-    private static void GenerateTypeSpecifierEnumDeclaration(UnionTypeDefinition source)
+    internal static void GenerateTypeSpecifierEnumDeclaration(UnionTypeDefinition source, ISourceBuilder sb)
     {
-        var sb = source.SourceBuilder;
         var baseType = source.TypeIdentifierBaseType;
         var mode = source.TypeIdentifierValueMode;
         var bitMask = source.BitMask;
@@ -357,7 +398,7 @@ public partial class Generator : IIncrementalGenerator
                 }
             }
         }
-        else if(bitMask == 0)
+        else if (bitMask == 0)
         {
             var i = 1;
             foreach (var type in types)
@@ -391,4 +432,115 @@ public partial class Generator : IIncrementalGenerator
     }
 
 
+    internal static bool IsEfficientUnionAttribute(AttributeData attrData) =>
+        attrData.AttributeClass?.ToDisplayString() == EfficientUnionAttributeFullName;
+
+
+    internal static (TypeIdentifierValueMode mode, ulong bitMask) ReadAttributeParameter(AttributeData attrData)
+    {
+        Debug.Assert(IsEfficientUnionAttribute(attrData));
+
+        TypeIdentifierValueMode mode;
+        ulong bitMask;
+        if (attrData.ConstructorArguments.Length == 0)
+        {
+            mode = TypeIdentifierValueMode.AutoAssign;
+            bitMask = 0;
+        }
+        else if (attrData.ConstructorArguments.Length == 2)
+        {
+            mode = (TypeIdentifierValueMode)(int)attrData.ConstructorArguments[0].Value!;
+            bitMask = (ulong)attrData.ConstructorArguments[1].Value!;
+        }
+        else
+        {
+            throw new InvalidOperationException($"Unsupported bit mask type");
+        }
+        return (mode, bitMask);
+    }
+}
+
+
+internal record UnitTypeGenerationInfo(UnionTypeDefinition Source, SourceBuilder SourceBuilder);
+
+
+// determines whether re-generation is needed based on the equality of the source and source builder.
+file class GeneratorAttributeSyntaxContextComparer(CodePathProfiler profiler)
+    : IEqualityComparer<GeneratorAttributeSyntaxContext>
+{
+    public bool Equals(GeneratorAttributeSyntaxContext x, GeneratorAttributeSyntaxContext y)
+    {
+        using var counter = profiler.StartMeasurement();
+
+        if ((x.TargetNode, y.TargetNode) is not (TypeDeclarationSyntax xType, TypeDeclarationSyntax yType))
+        {
+            throw new InvalidOperationException();
+        }
+
+        if (xType.Identifier.ValueText != yType.Identifier.ValueText)
+        {
+            return false;
+        }
+
+        counter.MarkCheckpoint("Identifier check");
+
+        var ctorsY = new HashSet<ConstructorDeclarationSyntax>(SyntaxNodeComparer.Instance);
+        foreach (var member in yType.Members)
+        {
+            if (member is ConstructorDeclarationSyntax ctor)
+            {
+                ctorsY.Add(ctor);
+            }
+        }
+
+        counter.MarkCheckpoint("Collect ctors of y");
+
+        foreach (var member in xType.Members)
+        {
+            if (member is ConstructorDeclarationSyntax ctor)
+            {
+                if (!ctorsY.Contains(ctor))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public int GetHashCode(GeneratorAttributeSyntaxContext obj)
+    {
+        if (obj.TargetNode is not TypeDeclarationSyntax typeDecl)
+        {
+            throw new InvalidOperationException();
+        }
+
+        var hash = (uint)typeDecl.Identifier.ValueText.GetHashCode();
+        foreach (var member in typeDecl.Members)
+        {
+            if (member is not ConstructorDeclarationSyntax ctor)
+            {
+                continue;
+            }
+            hash ^= (uint)ctor.WithoutTrivia().ToFullString().GetHashCode();
+            hash = (hash << 13) | (hash >> 19);
+        }
+        return (int)hash;
+    }
+}
+
+
+file class UnitTypeGenerationInfoComparer : IEqualityComparer<UnitTypeGenerationInfo?>
+{
+    // SourceBuilder is a string builder for the generated source code.
+    // It contains information about the generation target type, but is not part of the type's logical state.
+    // Therefore, it should not be considered for equality comparison or hash code generation.
+
+    public static UnitTypeGenerationInfoComparer Instance { get; } = new();
+
+    public bool Equals(UnitTypeGenerationInfo? x, UnitTypeGenerationInfo? y) =>
+        UnionTypeDefinitionEqualityComparer.Equals(x?.Source, y?.Source);
+
+    public int GetHashCode(UnitTypeGenerationInfo? obj) =>
+        UnionTypeDefinitionEqualityComparer.GetHashCode(obj?.Source);
 }

@@ -1,31 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-      <TargetFramework>netstandard2.0</TargetFramework>
-      <LangVersion>14</LangVersion>
-      <Nullable>enable</Nullable>
-      <ImplicitUsings>enable</ImplicitUsings>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>14</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
 
-      <IsRoslynComponent>true</IsRoslynComponent>
-      <AnalyzerLanguage>cs</AnalyzerLanguage>
-      <IncludeBuildOutput>false</IncludeBuildOutput>
-      <DevelopmentDependency>true</DevelopmentDependency>
-      <IncludeSymbols>false</IncludeSymbols>
-      <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
-      <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <AnalyzerLanguage>cs</AnalyzerLanguage>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <IncludeSymbols>false</IncludeSymbols>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 
-      <PackageId>akanse.$(AssemblyName)</PackageId>
-      <Title>EfficientUnionGenerator</Title>
-      <Version>0.1.0.1</Version>
-      <Authors>aka-nse</Authors>
-      <Company />
-      <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-      <PackageReadmeFile>README.md</PackageReadmeFile>
-      <RepositoryUrl>https://github.com/aka-nse/EfficientUnionGenerator</RepositoryUrl>
-      <PackageProjectUrl>https://github.com/aka-nse/EfficientUnionGenerator</PackageProjectUrl>
-      <PackageTags>Generator</PackageTags>
-      <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-  </PropertyGroup>
+        <PackageId>akanse.$(AssemblyName)</PackageId>
+        <Title>EfficientUnionGenerator</Title>
+        <Version>0.1.0.1</Version>
+        <Authors>aka-nse</Authors>
+        <Company />
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/aka-nse/EfficientUnionGenerator</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/aka-nse/EfficientUnionGenerator</PackageProjectUrl>
+        <PackageTags>Generator</PackageTags>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="akanse.SourceGeneratorToolkit" Version="0.3.0">
